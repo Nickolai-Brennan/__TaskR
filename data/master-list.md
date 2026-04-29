@@ -4,3 +4,4 @@
 |----|------|-------------|----------|---------|----------|--------------|
 | TASK-0046 | Create Action — TaskR Create Task Workflow | Build a workflow_dispatch GitHub Action for creating structured TaskR task YAML files from the Actions UI | automation | TaskR | Self |
 | TASK-0047 | Example | Task created via workflow_dispatch: Example | automation | TaskR | root | [] |
+| TASK-0048 | SQL | Task created via workflow_dispatch: SQL | automation | TaskR | root | [] |
