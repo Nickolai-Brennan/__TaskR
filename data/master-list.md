@@ -47,3 +47,4 @@
 | TASK-0043 | Agent Performance Tracking | Track agent output quality | analytics | TaskR | TASK-0010 | [TASK-0010] |
 | TASK-0044 | System Health Monitoring | Monitor automation health | operations | TaskR | TASK-0012 | [TASK-0012] |
 | TASK-0045 | Export System | Export tasks to CSV/JSON | data | TaskR | TASK-0026 | [TASK-0026] |
+| TASK-0046 | Create Action — TaskR Create Task Workflow | Build a workflow_dispatch GitHub Action for creating structured TaskR task YAML files from the Actions UI | automation | TaskR | TASK-0012 | [TASK-0001, TASK-0012] |
