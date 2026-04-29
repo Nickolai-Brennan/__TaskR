@@ -1,0 +1,181 @@
+# .github/workflows/taskr-entry-router.yml
+
+name: TaskR Entry Router
+
+on:
+  issues:
+    types:
+      - opened
+      - edited
+      - labeled
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  route-task-entry:
+    if: contains(github.event.issue.labels.*.name, 'taskr-entry') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install pyyaml python-slugify
+
+      - name: Create task from GitHub issue
+        env:
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          mkdir -p scripts
+          cat > scripts/taskr_expand_entry.py <<'PY'
+          import os
+          import yaml
+          from slugify import slugify
+          from datetime import datetime
+
+          issue_number = os.getenv("ISSUE_NUMBER", "manual")
+          title = os.getenv("ISSUE_TITLE", "Untitled Task")
+          body = os.getenv("ISSUE_BODY", "")
+          issue_url = os.getenv("ISSUE_URL", "")
+
+          task_id = f"TASK-{int(issue_number):04d}" if issue_number.isdigit() else "TASK-0000"
+          name = title.strip()
+          slug = slugify(name)
+
+          project = "TaskR"
+          repo = "taskr"
+          category = "automation"
+
+          task = {
+              "task": {
+                  "id": task_id,
+                  "name": name,
+                  "description": body.strip() or f"Task created from GitHub issue: {name}",
+                  "project": project,
+                  "category": category,
+                  "subcategory": "task_entry",
+                  "relation": "root",
+                  "dependencies": [],
+                  "status": "inbox",
+                  "phase": "intake",
+                  "priority": 3,
+                  "urgency": 3,
+                  "importance": 3,
+                  "task_type": "action",
+                  "tags": ["taskr", "github", "task-entry"],
+                  "owner": "Nick",
+                  "assigned_agent": "intake_agent",
+                  "tool_stack": ["GitHub", "GitHub Actions", "ChatGPT"],
+                  "source": "github_issue",
+                  "source_url": issue_url,
+                  "input_type": "rough_task_entry",
+                  "output_type": "yaml",
+                  "estimated_time": "30-min",
+                  "complexity": "moderate",
+                  "risk_level": "low",
+                  "automation_ready": True,
+                  "repeatable": True,
+                  "template_needed": False,
+                  "requires_review": True,
+                  "next_action": "Review and enrich the generated task parameters.",
+                  "acceptance_criteria": [
+                      "Task has a valid ID, name, description, project, category, and phase.",
+                      "Task is saved to the designated repo task folder.",
+                      "Task summary row is added to master_table.md."
+                  ],
+                  "created_at": datetime.utcnow().isoformat()
+              },
+              "routing": {
+                  "destination_repo": repo,
+                  "destination_path": f"{repo}/docs/tasks/{task_id}-{slug}.yaml"
+              }
+          }
+
+          task_path = f"{repo}/docs/tasks/{task_id}-{slug}.yaml"
+          os.makedirs(os.path.dirname(task_path), exist_ok=True)
+
+          with open(task_path, "w", encoding="utf-8") as f:
+              yaml.dump(task, f, sort_keys=False, allow_unicode=True)
+
+          os.makedirs("taskr/docs", exist_ok=True)
+          table_path = "taskr/docs/master_table.md"
+
+          header = """# TaskR Master Table
+
+          | ID | Name | Description | Category | Project | Repo | Relation | Dependencies | Status | Phase | Priority |
+          |----|------|-------------|----------|---------|------|----------|--------------|--------|-------|----------|
+          """
+
+          description = body.replace("\n", " ").strip() or f"Task created from GitHub issue: {name}"
+          description = description[:180]
+
+          row = f"| {task_id} | {name} | {description} | {category} | {project} | {repo} | root | [] | inbox | intake | 3 |\n"
+
+          if not os.path.exists(table_path):
+              with open(table_path, "w", encoding="utf-8") as f:
+                  f.write(header)
+                  f.write(row)
+          else:
+              with open(table_path, "r", encoding="utf-8") as f:
+                  lines = f.readlines()
+
+              lines = [line for line in lines if not line.startswith(f"| {task_id} |")]
+              lines.append(row)
+
+              with open(table_path, "w", encoding="utf-8") as f:
+                  f.writelines(lines)
+
+          print(f"Created {task_path}")
+          print(f"Updated {table_path}")
+          PY
+
+          python scripts/taskr_expand_entry.py
+
+      - name: Commit generated task files
+        run: |
+          git config user.name "TaskR Bot"
+          git config user.email "taskr-bot@users.noreply.github.com"
+          git add taskr/docs/tasks taskr/docs/master_table.md
+          git commit -m "TaskR: route new task entry" || echo "No changes to commit"
+          git push
+
+      - name: Comment on source issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            if (context.payload.issue) {
+              github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.issue.number,
+                body: "TaskR processed this entry and added it to `taskr/docs/tasks/` plus `taskr/docs/master_table.md`."
+              })
+            }
+
+Use label:
+
+taskr-entry
+
+Recommended issue title format:
+
+Create TaskR Quick Entry Template
+
+Recommended issue body:
+
+Project: TaskR
+Category: automation
+Description: Build a reusable task intake format that converts rough notes into structured task records.
