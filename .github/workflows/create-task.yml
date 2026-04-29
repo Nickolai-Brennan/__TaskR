@@ -1,0 +1,315 @@
+# .github/workflows/create-task.yml
+
+name: TaskR — Create Task
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Task title (short, action-based)"
+        required: true
+        type: string
+      description:
+        description: "Task description (1–2 sentences)"
+        required: false
+        type: string
+        default: ""
+      project:
+        description: "Project name"
+        required: false
+        type: string
+        default: "TaskR"
+      category:
+        description: "Category (e.g. automation, development, frontend)"
+        required: false
+        type: choice
+        options:
+          - automation
+          - development
+          - frontend
+          - backend
+          - database
+          - api
+          - data
+          - ai_agent
+          - project_management
+          - documentation
+          - design
+          - content
+          - marketing
+          - seo
+          - analytics
+          - operations
+          - revenue
+        default: "automation"
+      task_type:
+        description: "Task type"
+        required: false
+        type: choice
+        options:
+          - action
+          - feature
+          - automation
+          - workflow
+          - documentation
+          - template
+          - research
+          - bug
+          - enhancement
+          - integration
+          - idea
+          - note
+          - decision
+          - report
+          - dashboard
+          - design_asset
+          - review
+        default: "action"
+      priority:
+        description: "Priority (1=low … 5=critical)"
+        required: false
+        type: choice
+        options:
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          - "5"
+        default: "3"
+      phase:
+        description: "Lifecycle phase"
+        required: false
+        type: choice
+        options:
+          - intake
+          - clarify
+          - research
+          - plan
+          - design
+          - build
+          - test
+          - review
+          - launch
+          - maintain
+          - improve
+          - archive
+        default: "intake"
+      tags:
+        description: "Comma-separated tags (e.g. taskr,automation,quick-win)"
+        required: false
+        type: string
+        default: "taskr"
+      assigned_agent:
+        description: "Agent to assign"
+        required: false
+        type: choice
+        options:
+          - intake_agent
+          - planning_agent
+          - research_agent
+          - documentation_agent
+          - design_agent
+          - development_agent
+          - frontend_agent
+          - backend_agent
+          - database_agent
+          - data_agent
+          - automation_agent
+          - ai_agent
+          - marketing_agent
+          - seo_agent
+          - analytics_agent
+          - review_agent
+        default: "intake_agent"
+      estimated_time:
+        description: "Estimated effort"
+        required: false
+        type: choice
+        options:
+          - 5-min
+          - 15-min
+          - 30-min
+          - 1-hour
+          - 2-hours
+          - half-day
+          - full-day
+          - multi-day
+        default: "30-min"
+
+permissions:
+  contents: write
+
+jobs:
+  create-task:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install pyyaml python-slugify
+
+      - name: Generate next task ID
+        id: next-id
+        run: |
+          python - <<'PY'
+          import re, os
+
+          master = "data/master-list.md"
+          highest = 0
+
+          if os.path.exists(master):
+              with open(master) as f:
+                  for line in f:
+                      m = re.search(r"TASK-(\d{4})", line)
+                      if m:
+                          highest = max(highest, int(m.group(1)))
+
+          next_id = f"TASK-{highest + 1:04d}"
+          print(f"Next task ID: {next_id}")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"task_id={next_id}\n")
+          PY
+
+      - name: Create task YAML and update master list
+        env:
+          TASK_ID: ${{ steps.next-id.outputs.task_id }}
+          TITLE: ${{ inputs.title }}
+          DESCRIPTION: ${{ inputs.description }}
+          PROJECT: ${{ inputs.project }}
+          CATEGORY: ${{ inputs.category }}
+          TASK_TYPE: ${{ inputs.task_type }}
+          PRIORITY: ${{ inputs.priority }}
+          PHASE: ${{ inputs.phase }}
+          TAGS: ${{ inputs.tags }}
+          ASSIGNED_AGENT: ${{ inputs.assigned_agent }}
+          ESTIMATED_TIME: ${{ inputs.estimated_time }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          python - <<'PY'
+          import os, yaml
+          from slugify import slugify
+          from datetime import datetime, timezone
+
+          task_id      = os.environ["TASK_ID"]
+          title        = os.environ["TITLE"].strip()
+          description  = os.environ["DESCRIPTION"].strip() or f"Task created via workflow_dispatch: {title}"
+          project      = os.environ["PROJECT"].strip()
+          category     = os.environ["CATEGORY"]
+          task_type    = os.environ["TASK_TYPE"]
+          priority     = int(os.environ["PRIORITY"])
+          phase        = os.environ["PHASE"]
+          tags_raw     = os.environ["TAGS"]
+          assigned     = os.environ["ASSIGNED_AGENT"]
+          est_time     = os.environ["ESTIMATED_TIME"]
+          actor        = os.environ["ACTOR"]
+
+          tags = [t.strip() for t in tags_raw.split(",") if t.strip()]
+
+          task = {
+              "task": {
+                  "id": task_id,
+                  "name": title,
+                  "description": description,
+                  "project": project,
+                  "category": category,
+                  "subcategory": "",
+                  "relation": "root",
+                  "dependencies": [],
+                  "status": "inbox",
+                  "phase": phase,
+                  "priority": priority,
+                  "urgency": priority,
+                  "importance": priority,
+                  "task_type": task_type,
+                  "tags": tags,
+                  "owner": actor,
+                  "assigned_agent": assigned,
+                  "tool_stack": ["GitHub", "GitHub Actions"],
+                  "source": "workflow_dispatch",
+                  "input_type": "manual_entry",
+                  "output_type": "yaml",
+                  "estimated_time": est_time,
+                  "complexity": "moderate",
+                  "risk_level": "low",
+                  "automation_ready": True,
+                  "repeatable": False,
+                  "template_needed": False,
+                  "requires_review": True,
+                  "next_action": f"Review and enrich the generated task parameters for {title}.",
+                  "acceptance_criteria": [
+                      "Task has a valid ID, name, description, project, category, and phase.",
+                      "Task is saved to data/tasks/.",
+                      "Task summary row is added to data/master-list.md.",
+                  ],
+                  "created_at": datetime.now(timezone.utc).isoformat(),
+              }
+          }
+
+          slug      = slugify(title)
+          task_dir  = "data/tasks"
+          task_path = f"{task_dir}/{task_id}-{slug}.yaml"
+          os.makedirs(task_dir, exist_ok=True)
+
+          with open(task_path, "w", encoding="utf-8") as f:
+              yaml.dump(task, f, sort_keys=False, allow_unicode=True)
+
+          print(f"Created {task_path}")
+
+          # --- Update master-list.md ---
+          master_path = "data/master-list.md"
+          header = (
+              "## TaskR — Simplified Task Table (Project + Dependencies)\n\n"
+              "| ID | Name | Description | Category | Project | Relation | Dependencies |\n"
+              "|----|------|-------------|----------|---------|----------|--------------|\n"
+          )
+
+          MAX_DESC_LENGTH = 120
+          desc_short = description[:MAX_DESC_LENGTH].replace("|", "-")
+          new_row = f"| {task_id} | {title} | {desc_short} | {category} | {project} | root | [] |\n"
+
+          if not os.path.exists(master_path):
+              with open(master_path, "w", encoding="utf-8") as f:
+                  f.write(header)
+                  f.write(new_row)
+          else:
+              with open(master_path, "r", encoding="utf-8") as f:
+                  lines = f.readlines()
+              # Remove any existing row for this ID, then append
+              lines = [l for l in lines if not l.startswith(f"| {task_id} |")]
+              lines.append(new_row)
+              with open(master_path, "w", encoding="utf-8") as f:
+                  f.writelines(lines)
+
+          print(f"Updated {master_path}")
+          PY
+
+      - name: Commit task files
+        run: |
+          git config user.name "TaskR Bot"
+          git config user.email "taskr-bot@users.noreply.github.com"
+          git add data/tasks data/master-list.md
+          git commit -m "TaskR: create task ${{ steps.next-id.outputs.task_id }} — ${{ inputs.title }}" \
+            || echo "No changes to commit"
+          git push
+
+      - name: Summary
+        run: |
+          echo "### ✅ Task Created" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **ID** | \`${{ steps.next-id.outputs.task_id }}\` |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Title** | ${{ inputs.title }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Project** | ${{ inputs.project }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Category** | ${{ inputs.category }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Type** | ${{ inputs.task_type }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Phase** | ${{ inputs.phase }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Priority** | ${{ inputs.priority }} |" >> "$GITHUB_STEP_SUMMARY"

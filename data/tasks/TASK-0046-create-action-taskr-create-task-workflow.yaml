@@ -1,0 +1,52 @@
+task:
+  id: TASK-0046
+  name: Create Action — TaskR Create Task Workflow
+  description: Build a GitHub Actions workflow_dispatch action that allows creating structured
+    TaskR task YAML files directly from the GitHub Actions UI, without requiring a
+    GitHub Issue.
+  project: TaskR
+  category: automation
+  subcategory: workflow_mapping
+  relation: TASK-0012
+  dependencies:
+  - TASK-0001
+  - TASK-0012
+  status: completed
+  phase: build
+  priority: 4
+  urgency: 3
+  importance: 4
+  task_type: action
+  tags:
+  - taskr
+  - automation
+  - github-actions
+  - workflow
+  - task-entry
+  - agent-ready
+  owner: Nick
+  assigned_agent: automation_agent
+  tool_stack:
+  - GitHub
+  - GitHub Actions
+  - Python
+  source: manual_entry
+  input_type: rough_task_entry
+  output_type: yaml
+  estimated_time: 1-hour
+  complexity: moderate
+  risk_level: low
+  automation_ready: true
+  repeatable: true
+  template_needed: false
+  requires_review: true
+  next_action: Test the workflow by triggering it via workflow_dispatch in the GitHub
+    Actions UI and verifying a task YAML is committed to data/tasks/.
+  acceptance_criteria:
+  - Workflow is triggerable from the GitHub Actions UI via workflow_dispatch.
+  - All standard TaskR task fields are available as inputs (title, category, type,
+    priority, phase, tags, agent, estimated time).
+  - Running the workflow creates a valid YAML task file in data/tasks/.
+  - Running the workflow appends a new row to data/master-list.md.
+  - A workflow run summary is produced showing the created task ID and title.
+  created_at: '2026-04-29T07:28:35+00:00'
