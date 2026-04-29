@@ -1,0 +1,38 @@
+task:
+  id: TASK-0047
+  name: Example
+  description: 'Task created via workflow_dispatch: Example'
+  project: TaskR
+  category: automation
+  subcategory: ''
+  relation: root
+  dependencies: []
+  status: inbox
+  phase: intake
+  priority: 3
+  urgency: 3
+  importance: 3
+  task_type: action
+  tags:
+  - taskr
+  owner: Nickolai-Brennan
+  assigned_agent: intake_agent
+  tool_stack:
+  - GitHub
+  - GitHub Actions
+  source: workflow_dispatch
+  input_type: manual_entry
+  output_type: yaml
+  estimated_time: 30-min
+  complexity: moderate
+  risk_level: low
+  automation_ready: true
+  repeatable: false
+  template_needed: false
+  requires_review: true
+  next_action: Review and enrich the generated task parameters for Example.
+  acceptance_criteria:
+  - Task has a valid ID, name, description, project, category, and phase.
+  - Task is saved to data/tasks/.
+  - Task summary row is added to data/master-list.md.
+  created_at: '2026-04-29T07:42:57.570026+00:00'
