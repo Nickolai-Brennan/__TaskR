@@ -47,3 +47,4 @@
 | TASK-0043 | Agent Performance Tracking | Track agent output quality | analytics | TaskR | TASK-0010 | [TASK-0010] |
 | TASK-0044 | System Health Monitoring | Monitor automation health | operations | TaskR | TASK-0012 | [TASK-0012] |
 | TASK-0045 | Export System | Export tasks to CSV/JSON | data | TaskR | TASK-0026 | [TASK-0026] |
+| TASK-0046 | Social Media Size Charts | Create designated size charts for social media assets and posts | design | TaskR | root | [] |
