@@ -1,9 +1,10 @@
 # .github/workflows/create-task.yml
 
 name: TaskR — Create Task
-
 on:
-  workflow_dispatch:
+  push:
+    paths:
+      - "data/raw_unformatted/**"
     inputs:
       title:
         description: "Task title (short, action-based)"
